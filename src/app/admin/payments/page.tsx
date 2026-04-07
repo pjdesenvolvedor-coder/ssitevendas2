@@ -18,6 +18,7 @@ import { Check, X, Search, Wallet, User, Copy, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { WithdrawalRequest } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export default function AdminPaymentsPage() {
   const { withdrawals, updateWithdrawalStatus } = useProducts();

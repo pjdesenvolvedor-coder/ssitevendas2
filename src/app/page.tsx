@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/navbar";
@@ -13,21 +13,24 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Star, Zap, ShoppingCart, Tv, Play, Ban, Sparkles, ArrowRight } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
-export default function Home() {
-  const { products } = useProducts();
+function RefTracker() {
   const searchParams = useSearchParams();
-  const heroImg = PlaceHolderImages.find(img => img.id === 'hero')?.imageUrl || '';
-  const logoImg = PlaceHolderImages.find(img => img.id === 'logo')?.imageUrl || '';
-
-  const categories = ['Netflix', 'Disney+', 'HBO Max', 'Prime Video', 'Star+', 'GloboPlay', 'Apple TV+'];
-  const tickerItems = [...categories, ...categories];
-
   useEffect(() => {
     const ref = searchParams.get('ref');
     if (ref) {
       sessionStorage.setItem('pj_contas_ref', ref);
     }
   }, [searchParams]);
+  return null;
+}
+
+export default function Home() {
+  const { products } = useProducts();
+  const heroImg = PlaceHolderImages.find(img => img.id === 'hero')?.imageUrl || '';
+  const logoImg = PlaceHolderImages.find(img => img.id === 'logo')?.imageUrl || '';
+
+  const categories = ['Netflix', 'Disney+', 'HBO Max', 'Prime Video', 'Star+', 'GloboPlay', 'Apple TV+'];
+  const tickerItems = [...categories, ...categories];
 
   const scrollToProducts = () => {
     const element = document.getElementById('produtos');
@@ -42,6 +45,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground overflow-x-hidden">
+      <Suspense fallback={null}>
+        <RefTracker />
+      </Suspense>
       <Navbar />
       
       {/* Hero Section */}
