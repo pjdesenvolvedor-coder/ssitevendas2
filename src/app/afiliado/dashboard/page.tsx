@@ -31,7 +31,6 @@ import {
   Shield,
   Trophy,
   Diamond,
-  Sparkles,
   ArrowUpRight,
   Clock,
   Save
@@ -188,15 +187,6 @@ export default function AffiliateDashboard() {
           <Button variant="ghost" onClick={handleLogout} className="text-muted-foreground hover:text-red-500 rounded-xl gap-2 font-bold uppercase tracking-widest text-[10px]">
             <LogOut className="w-4 h-4" /> Sair
           </Button>
-        </div>
-
-        {/* Mensagem Motivacional */}
-        <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-center justify-center gap-3 animate-in fade-in slide-in-from-top-2 duration-700 shadow-lg shadow-primary/5">
-          <Sparkles className="w-5 h-5 text-primary animate-pulse shrink-0" />
-          <p className="text-sm md:text-base font-bold italic text-white text-center leading-relaxed">
-            "O difícil não é vender, é não sentir o prazer do dinheiro caindo!"
-          </p>
-          <Sparkles className="w-5 h-5 text-primary animate-pulse shrink-0" />
         </div>
 
         {/* Menu */}
@@ -369,7 +359,7 @@ export default function AffiliateDashboard() {
                       <Card key={w.id} className="bg-card/50 border-white/5 rounded-2xl p-4">
                         <div className="flex items-center justify-between">
                           <div className="space-y-1">
-                            <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">{new Date(w.createdAt).toLocaleDateString()}</span>
+                            <span className="text-8px] font-bold uppercase tracking-widest text-muted-foreground">{new Date(w.createdAt).toLocaleDateString()}</span>
                             <h4 className="text-sm font-bold uppercase">R$ {w.amount.toFixed(2)}</h4>
                           </div>
                           <Badge className={cn(
