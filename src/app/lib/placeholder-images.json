@@ -1,0 +1,41 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "logo",
+      "description": "PJ CONTAS Logo",
+      "imageUrl": "https://i.imgur.com/XsXK777.png",
+      "imageHint": "company logo"
+    },
+    {
+      "id": "netflix",
+      "description": "Netflix Logo",
+      "imageUrl": "https://picsum.photos/seed/netflix/400/400",
+      "imageHint": "streaming netflix"
+    },
+    {
+      "id": "disney",
+      "description": "Disney Plus Logo",
+      "imageUrl": "https://picsum.photos/seed/disney/400/400",
+      "imageHint": "disney plus"
+    },
+    {
+      "id": "max",
+      "description": "HBO Max Logo",
+      "imageUrl": "https://picsum.photos/seed/max/400/400",
+      "imageHint": "hbo max"
+    },
+    {
+      "id": "prime",
+      "description": "Amazon Prime Video",
+      "imageUrl": "https://picsum.photos/seed/prime/400/400",
+      "imageHint": "prime video"
+    },
+    {
+      "id": "hero",
+      "description": "StreamPulsar Hero Background",
+      "imageUrl": "https://picsum.photos/seed/hero/1200/600",
+      "imageHint": "digital entertainment"
+    }
+  ]
+}

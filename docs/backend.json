@@ -1,0 +1,58 @@
+
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a type of streaming service product.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "number" },
+        "active": { "type": "boolean" }
+      }
+    },
+    "Affiliate": {
+      "title": "Affiliate",
+      "type": "object",
+      "description": "Represents an affiliate user in the PJ ELITE program.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active", "rejected"] },
+        "balance": { "type": "number" },
+        "pixKey": { "type": "string" }
+      }
+    },
+    "WithdrawalRequest": {
+      "title": "WithdrawalRequest",
+      "type": "object",
+      "description": "A request for payment from an affiliate.",
+      "properties": {
+        "id": { "type": "string" },
+        "affiliateId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "paid", "rejected"] }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["password", "anonymous"]
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Catalog of products."
+    },
+    "/affiliates/{affiliateId}": {
+      "schema": { "$ref": "#/entities/Affiliate" },
+      "description": "Affiliate accounts."
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": { "$ref": "#/entities/WithdrawalRequest" },
+      "description": "Withdrawal requests from affiliates."
+    }
+  }
+}
