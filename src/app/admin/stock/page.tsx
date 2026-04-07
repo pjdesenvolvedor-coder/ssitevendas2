@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -18,8 +19,7 @@ import {
   Lock
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import Image from "image";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -42,7 +42,6 @@ export default function AdminStockPage() {
   const { products, addCredential, removeCredential } = useProducts();
   const { toast } = useToast();
   
-  // Filtra apenas produtos de Varejo
   const retailProducts = products.filter(p => !p.isRevenda);
 
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -120,7 +119,7 @@ export default function AdminStockPage() {
                   <div className="flex items-center gap-4">
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-primary/10 shrink-0">
                       {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
+                        <Image src={product.imageUrl} alt={product.name} fill className="object-cover" />
                       ) : (
                         <Tv className="w-5 h-5 text-primary absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                       )}

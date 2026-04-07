@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -49,9 +50,13 @@ export default function AdminProductsPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingProduct, setEditingProduct] = useState<StreamingService | null>(null);
   const [productToDelete, setProductToDelete] = useState<StreamingService | null>(null);
+  const [hasMounted, setHasMounted] = useState(false);
   const { toast } = useToast();
 
-  // Filtra apenas produtos de Varejo
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   const retailProducts = products.filter(p => !p.isRevenda);
 
   const [newFeature, setNewFeature] = useState("");
@@ -139,8 +144,6 @@ export default function AdminProductsPage() {
       return;
     }
     
-    const originalPriceVal = parseFloat(formData.originalPrice);
-    
     const newProduct: StreamingService = {
       id: Math.random().toString(36).substr(2, 9),
       name: formData.name,
@@ -152,7 +155,7 @@ export default function AdminProductsPage() {
       active: true,
       isPromotion: formData.isPromotion,
       isRevenda: false,
-      originalPrice: (formData.isPromotion && !isNaN(originalPriceVal)) ? originalPriceVal : null,
+      originalPrice: (formData.isPromotion && formData.originalPrice) ? parseFloat(formData.originalPrice) : null,
     };
 
     addProduct(newProduct);
@@ -163,13 +166,6 @@ export default function AdminProductsPage() {
 
   const handleUpdateProduct = () => {
     if (!editingProduct) return;
-    if (!editFormData.name || !editFormData.price || !editFormData.imageUrl) {
-      toast({ title: "Campos Incompletos", description: "Por favor, preencha nome, preço e URL da imagem.", variant: "destructive" });
-      return;
-    }
-
-    const originalPriceVal = parseFloat(editFormData.originalPrice);
-
     const updatedProduct: StreamingService = {
       ...editingProduct,
       name: editFormData.name,
@@ -178,14 +174,14 @@ export default function AdminProductsPage() {
       features: editFormData.features,
       active: editFormData.active,
       isPromotion: editFormData.isPromotion,
-      originalPrice: (editFormData.isPromotion && !isNaN(originalPriceVal)) ? originalPriceVal : null,
+      originalPrice: (editFormData.isPromotion && editFormData.originalPrice) ? parseFloat(editFormData.originalPrice) : null,
     };
-
     updateProduct(updatedProduct);
-
     toast({ title: "Produto Atualizado", description: "Alterações salvas com sucesso." });
     setEditingProduct(null);
   };
+
+  if (!hasMounted) return null;
 
   return (
     <div className="space-y-8">
