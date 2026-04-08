@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useProducts } from "@/context/products-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -25,10 +25,22 @@ export default function AdminPaymentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  const filtered = withdrawals.filter(w => 
-    w.affiliateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    w.pixKey.includes(searchTerm)
-  );
+  // Lógica de filtragem e ordenação: Pendentes primeiro, depois por data decrescente
+  const filteredAndSorted = useMemo(() => {
+    return [...withdrawals]
+      .filter(w => 
+        w.affiliateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.pixKey.includes(searchTerm)
+      )
+      .sort((a, b) => {
+        // Prioridade 1: Status 'pending'
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+        
+        // Prioridade 2: Data de criação (mais recentes primeiro)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+  }, [withdrawals, searchTerm]);
 
   const handleAction = (id: string, status: 'paid' | 'rejected') => {
     updateWithdrawalStatus(id, status);
@@ -74,8 +86,8 @@ export default function AdminPaymentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length > 0 ? (
-                filtered.map((req) => (
+              {filteredAndSorted.length > 0 ? (
+                filteredAndSorted.map((req) => (
                   <TableRow key={req.id} className="border-border hover:bg-muted/30">
                     <TableCell>
                       <div className="flex flex-col">
