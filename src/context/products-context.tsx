@@ -86,7 +86,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const { data: settingsData, isLoading: loadingSettings } = useDoc<AppSettings>(settingsDocRef);
 
   const products = useMemo(() => productsData || [], [productsData]);
-  const orders = useMemo(() => ordersData || [], [ordersData]);
+  const orders = useMemo(() => {
+    if (!ordersData) return [];
+    return [...ordersData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [ordersData]);
+  
   const affiliates = useMemo(() => affiliatesData || [], [affiliatesData]);
   const withdrawals = useMemo(() => withdrawalsData || [], [withdrawalsData]);
   const webhookSettings = useMemo(() => webhookData || DEFAULT_WEBHOOK, [webhookData]);
@@ -178,23 +182,26 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addOrder = useCallback((order: Order) => {
-    const orderRef = doc(db, 'orders', order.id);
-    setDocumentNonBlocking(orderRef, order, { merge: true });
+    const storedRef = typeof window !== 'undefined' ? sessionStorage.getItem('pj_contas_ref') : null;
+    const finalOrder = {
+      ...order,
+      affiliateId: order.affiliateId || storedRef
+    };
 
-    const storedRef = sessionStorage.getItem('pj_contas_ref');
-    const finalAffId = order.affiliateId || storedRef;
+    const orderRef = doc(db, 'orders', finalOrder.id);
+    setDocumentNonBlocking(orderRef, finalOrder, { merge: true });
 
-    if (finalAffId) {
-      const affiliate = affiliates.find(a => a.id === finalAffId);
+    if (finalOrder.affiliateId) {
+      const affiliate = affiliates.find(a => a.id === finalOrder.affiliateId);
       if (affiliate && affiliate.status === 'active') {
         const currentVolume = affiliate.totalSalesVolume || 0;
         const rate = affiliate.commissionRate || calculateProgressiveRate(currentVolume);
-        const commissionAmount = (order.total * rate) / 100;
+        const commissionAmount = (finalOrder.total * rate) / 100;
         
         const affiliateRef = doc(db, 'affiliates', affiliate.id);
         updateDocumentNonBlocking(affiliateRef, {
           balance: (affiliate.balance || 0) + commissionAmount,
-          totalSalesVolume: currentVolume + order.total
+          totalSalesVolume: currentVolume + finalOrder.total
         });
 
         const commissionId = `COM-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
@@ -202,25 +209,25 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
         setDocumentNonBlocking(commissionRef, {
           id: commissionId,
           affiliateId: affiliate.id,
-          orderId: order.id,
+          orderId: finalOrder.id,
           amount: commissionAmount,
           date: new Date().toISOString()
         }, { merge: true });
         
-        sessionStorage.removeItem('pj_contas_ref');
+        if (typeof window !== 'undefined') sessionStorage.removeItem('pj_contas_ref');
       }
     }
 
     if (webhookSettings.enabled && webhookSettings.url) {
       const sendWebhooksSequentially = async () => {
-        for (let i = 0; i < order.items.length; i++) {
-          const item = order.items[i];
+        for (let i = 0; i < finalOrder.items.length; i++) {
+          const item = finalOrder.items[i];
           const payload = {
-            orderId: order.id,
-            nome: order.customerName,
-            telefone: order.customerPhone,
+            orderId: finalOrder.id,
+            nome: finalOrder.customerName,
+            telefone: finalOrder.customerPhone,
             produto: item.productName,
-            valor: order.total,
+            valor: finalOrder.total,
             emailConta: item.email,
             senhaConta: item.pass,
             perfil: item.screen,
@@ -229,8 +236,9 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           };
 
           await sendWebhookAction(webhookSettings.url, payload);
-          if (i < order.items.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 5000));
+          // Pequeno delay para não sobrecarregar webhooks de bots
+          if (i < finalOrder.items.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
       };

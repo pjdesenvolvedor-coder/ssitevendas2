@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold mb-2">Dashboard</h1>
+        <h1 className="text-3xl font-headline font-bold mb-2 uppercase">Dashboard</h1>
         <p className="text-muted-foreground">Visão geral do seu império de streaming.</p>
       </div>
 
@@ -91,14 +91,22 @@ export default function AdminDashboard() {
           <CardContent>
             <div className="space-y-4">
               {orders.length > 0 ? (
-                orders.slice(0, 5).map((order) => (
+                orders.slice(0, 10).map((order) => (
                   <div key={order.id} className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-background/50 hover:bg-muted/30 transition-colors">
                     <div className="flex flex-col">
                       <span className="font-bold text-sm">{order.customerName}</span>
-                      <span className="text-[10px] text-muted-foreground uppercase">{order.id}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground uppercase">{order.id}</span>
+                        {order.items.some(item => item.isRevenda) && (
+                          <Badge className="bg-primary/20 text-primary border-none text-[8px] h-4">REVENDA</Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="font-bold text-primary">R$ {order.total.toFixed(2)}</span>
+                      <div className="text-right">
+                        <span className="font-bold text-primary block">R$ {order.total.toFixed(2)}</span>
+                        <span className="text-[8px] text-muted-foreground uppercase">{new Date(order.date).toLocaleDateString()}</span>
+                      </div>
                       <Badge className="bg-green-500/20 text-green-500 border-none uppercase text-[8px]">
                         Concluído
                       </Badge>
@@ -124,7 +132,10 @@ export default function AdminDashboard() {
                 products.map((product) => (
                   <div key={product.id} className="space-y-2">
                     <div className="flex justify-between text-xs">
-                      <span className="font-bold uppercase tracking-wider">{product.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold uppercase tracking-wider">{product.name}</span>
+                        {product.isRevenda && <Badge variant="outline" className="text-[8px] h-4 border-primary/30 text-primary">REVENDA</Badge>}
+                      </div>
                       <span className={cn(
                         "font-bold uppercase",
                         product.stock < 2 ? "text-red-500" : "text-muted-foreground"
