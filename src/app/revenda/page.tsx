@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/navbar";
@@ -11,18 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Star, Zap, ShoppingCart, Tv, Play, Ban, Sparkles, ArrowRight, Briefcase, Boxes } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-
-function RefTracker() {
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    const ref = searchParams.get('ref');
-    if (ref) {
-      sessionStorage.setItem('pj_contas_ref', ref);
-    }
-  }, [searchParams]);
-  return null;
-}
 
 export default function RevendaPage() {
   const { products } = useProducts();
@@ -51,9 +38,6 @@ export default function RevendaPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground overflow-x-hidden">
-      <Suspense fallback={null}>
-        <RefTracker />
-      </Suspense>
       <Navbar />
       
       {/* Hero Section */}

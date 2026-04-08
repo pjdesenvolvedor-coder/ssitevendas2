@@ -1,8 +1,11 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ProductsProvider } from "@/context/products-context";
 import { FirebaseClientProvider } from "@/firebase";
+import { Suspense } from "react";
+import { GlobalRefTracker } from "@/components/global-ref-tracker";
 
 export const metadata: Metadata = {
   title: 'PJ CONTAS - Acessos Premium',
@@ -24,6 +27,9 @@ export default function RootLayout({
       <body className="font-body antialiased min-h-screen bg-background text-foreground">
         <FirebaseClientProvider>
           <ProductsProvider>
+            <Suspense fallback={null}>
+              <GlobalRefTracker />
+            </Suspense>
             {children}
             <Toaster />
           </ProductsProvider>

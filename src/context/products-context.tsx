@@ -182,17 +182,20 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addOrder = useCallback((order: Order) => {
+    // Busca o afiliado no sessionStorage se não estiver na ordem
     const storedRef = typeof window !== 'undefined' ? sessionStorage.getItem('pj_contas_ref') : null;
+    const affiliateId = order.affiliateId || storedRef;
+    
     const finalOrder = {
       ...order,
-      affiliateId: order.affiliateId || storedRef
+      affiliateId
     };
 
     const orderRef = doc(db, 'orders', finalOrder.id);
     setDocumentNonBlocking(orderRef, finalOrder, { merge: true });
 
-    if (finalOrder.affiliateId) {
-      const affiliate = affiliates.find(a => a.id === finalOrder.affiliateId);
+    if (affiliateId) {
+      const affiliate = affiliates.find(a => a.id === affiliateId);
       if (affiliate && affiliate.status === 'active') {
         const currentVolume = affiliate.totalSalesVolume || 0;
         const rate = affiliate.commissionRate || calculateProgressiveRate(currentVolume);
@@ -214,6 +217,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           date: new Date().toISOString()
         }, { merge: true });
         
+        // Remove apenas após a conclusão total da venda
         if (typeof window !== 'undefined') sessionStorage.removeItem('pj_contas_ref');
       }
     }
@@ -232,11 +236,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
             senhaConta: item.pass,
             perfil: item.screen,
             senhaPerfil: item.screenPass || 'Sem senha',
-            isRevenda: item.isRevenda || false
+            isRevenda: item.isRevenda || false,
+            affiliateId: affiliateId || null
           };
 
           await sendWebhookAction(webhookSettings.url, payload);
-          // Pequeno delay para não sobrecarregar webhooks de bots
           if (i < finalOrder.items.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
