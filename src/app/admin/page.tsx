@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 export default function AdminDashboard() {
   const { products, orders } = useProducts();
   
-  // Cálculos baseados em dados reais
+  // Os pedidos já vem ordenados do contexto
   const totalRevenue = orders.reduce((acc, order) => acc + order.total, 0);
   const totalSales = orders.length;
   const activeProductsCount = products.filter(p => p.active).length;
@@ -27,8 +27,8 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold mb-2 uppercase">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral do seu império de streaming.</p>
+        <h1 className="text-3xl font-headline font-bold mb-2 uppercase text-primary">Painel PJ CONTAS</h1>
+        <p className="text-muted-foreground uppercase text-[10px] font-bold tracking-widest">Controle total das suas operações de streaming.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
             up: lowStock === 0 
           },
         ].map((stat, i) => (
-          <Card key={i} className="bg-card/50 border-border">
+          <Card key={i} className="bg-card/50 border-border rounded-[1.5rem] shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</CardTitle>
               <stat.icon className={cn("w-5 h-5", stat.color)} />
@@ -84,19 +84,19 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="bg-card/50 border-border">
-          <CardHeader>
-            <CardTitle className="font-headline text-xl uppercase tracking-normal">Últimos Pedidos</CardTitle>
+        <Card className="bg-card/50 border-border rounded-[2rem] overflow-hidden">
+          <CardHeader className="bg-primary/5 border-b border-border">
+            <CardTitle className="font-headline text-xl uppercase tracking-normal">Últimas Vendas Realizadas</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="p-0">
+            <div className="divide-y divide-border">
               {orders.length > 0 ? (
                 orders.slice(0, 10).map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-background/50 hover:bg-muted/30 transition-colors">
+                  <div key={order.id} className="flex items-center justify-between p-5 hover:bg-muted/30 transition-colors">
                     <div className="flex flex-col">
                       <span className="font-bold text-sm">{order.customerName}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-muted-foreground uppercase">{order.id}</span>
+                        <span className="text-[10px] text-muted-foreground uppercase font-mono">{order.id}</span>
                         {order.items.some(item => item.isRevenda) && (
                           <Badge className="bg-primary/20 text-primary border-none text-[8px] h-4">REVENDA</Badge>
                         )}
@@ -105,28 +105,28 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-4">
                       <div className="text-right">
                         <span className="font-bold text-primary block">R$ {order.total.toFixed(2)}</span>
-                        <span className="text-[8px] text-muted-foreground uppercase">{new Date(order.date).toLocaleDateString()}</span>
+                        <span className="text-[8px] text-muted-foreground uppercase font-bold">{new Date(order.date).toLocaleString('pt-BR')}</span>
                       </div>
-                      <Badge className="bg-green-500/20 text-green-500 border-none uppercase text-[8px]">
-                        Concluído
+                      <Badge className="bg-green-500/20 text-green-500 border-none uppercase text-[8px] font-bold">
+                        PAGO
                       </Badge>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="py-8 text-center text-muted-foreground uppercase text-[10px] font-bold">
-                  Nenhum pedido realizado ainda.
+                <div className="py-12 text-center text-muted-foreground uppercase text-[10px] font-bold tracking-widest">
+                  Nenhuma venda registrada ainda.
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/50 border-border">
-          <CardHeader>
-            <CardTitle className="font-headline text-xl uppercase tracking-normal">Status do Estoque</CardTitle>
+        <Card className="bg-card/50 border-border rounded-[2rem] overflow-hidden">
+          <CardHeader className="bg-primary/5 border-b border-border">
+            <CardTitle className="font-headline text-xl uppercase tracking-normal">Status do Estoque Atual</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-8">
              <div className="space-y-6">
               {products.length > 0 ? (
                 products.map((product) => (
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
                         {product.stock} disponíveis
                       </span>
                     </div>
-                    <div className="w-full bg-muted/30 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
                       <div 
                         className={cn(
                           "h-full transition-all duration-1000", 

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useEffect, useRef, useCallback } from "react";
 import { useProducts } from "@/context/products-context";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,11 +60,52 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
 
   const [purchasedCredentials, setPurchasedCredentials] = useState<DeliveredCredential[]>([]);
 
-  // Capturar ref do afiliado para links de retorno
   useEffect(() => {
     const storedRef = sessionStorage.getItem('pj_contas_ref');
     if (storedRef) setAffiliateRef(storedRef);
   }, []);
+
+  const processSale = useCallback(() => {
+    if (saleProcessedRef.current) return;
+    saleProcessedRef.current = true;
+
+    // 1. Coletar credenciais e atualizar estoque
+    const credentials: DeliveredCredential[] = selectedProducts.map(p => {
+      const sold = sellCredential(p.id);
+      return {
+        productName: p.name,
+        email: sold?.email || "Pendente de envio",
+        pass: sold?.password || "Pendente de envio",
+        screen: sold?.screenName || "Pendente de envio",
+        screenPass: sold?.screenPassword || null,
+        isRevenda: p.isRevenda || false
+      };
+    });
+    
+    // 2. Criar objeto do pedido
+    const newOrder: Order = {
+      id: `ORD-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+      customerName: formData.fullName,
+      customerPhone: formData.phone,
+      status: 'completed',
+      date: new Date().toISOString(),
+      total: selectedProducts.reduce((acc, p) => acc + p.price, 0),
+      items: credentials,
+      affiliateId: affiliateRef
+    };
+    
+    // 3. Persistir e Notificar Webhook via Contexto
+    addOrder(newOrder);
+    
+    // 4. Atualizar UI
+    setPurchasedCredentials(credentials);
+    setPaymentStatus('paid');
+    
+    toast({
+      title: "Pagamento Confirmado!",
+      description: "Seu acesso está liberado na tela.",
+    });
+  }, [selectedProducts, formData, affiliateRef, sellCredential, addOrder, toast]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -72,41 +113,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
     if (paymentStatus === 'pending' && pixData?.id && !saleProcessedRef.current) {
       interval = setInterval(async () => {
         const result = await checkPixStatusAction(pixData.id);
-        
-        if (result.status === 'paid' && !saleProcessedRef.current) {
-          saleProcessedRef.current = true;
+        if (result.status === 'paid') {
           clearInterval(interval);
-
-          const credentials: DeliveredCredential[] = selectedProducts.map(p => {
-            const sold = sellCredential(p.id);
-            return {
-              productName: p.name,
-              email: sold?.email || "Pendente de envio",
-              pass: sold?.password || "Pendente de envio",
-              screen: sold?.screenName || "Pendente de envio",
-              screenPass: sold?.screenPassword || null,
-              isRevenda: p.isRevenda || false
-            };
-          });
-          
-          const newOrder: Order = {
-            id: `ORD-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-            customerName: formData.fullName,
-            customerPhone: formData.phone,
-            status: 'completed',
-            date: new Date().toISOString(),
-            total: selectedProducts.reduce((acc, p) => acc + p.price, 0),
-            items: credentials
-          };
-          
-          addOrder(newOrder);
-          setPurchasedCredentials(credentials);
-          setPaymentStatus('paid');
-          
-          toast({
-            title: "Pagamento Confirmado!",
-            description: "Seu acesso está liberado na tela.",
-          });
+          processSale();
         }
       }, 5000);
     }
@@ -114,7 +123,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [paymentStatus, pixData?.id, selectedProducts, sellCredential, addOrder, formData, toast]);
+  }, [paymentStatus, pixData?.id, processSale]);
 
   useEffect(() => {
     const initialProduct = products.find(p => p.id === resolvedParams.id);
@@ -428,7 +437,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
               </CardContent>
             </Card>
           ) : paymentStatus === 'paid' && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-in fade-in duration-700">
               <Card className="bg-card/50 border-green-500/30 border-2 rounded-[2.5rem] shadow-2xl backdrop-blur-xl overflow-hidden py-10 px-8 text-center">
                 <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-8 h-8 text-green-500" />

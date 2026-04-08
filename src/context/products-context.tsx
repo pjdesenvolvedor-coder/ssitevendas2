@@ -190,9 +190,11 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       affiliateId
     };
 
+    // 1. Salvar o pedido no Firestore IMEDIATAMENTE
     const orderRef = doc(db, 'orders', finalOrder.id);
     setDocumentNonBlocking(orderRef, finalOrder, { merge: true });
 
+    // 2. Processar Afiliado
     if (affiliateId) {
       const affiliate = affiliates.find(a => a.id === affiliateId);
       if (affiliate && affiliate.status === 'active') {
@@ -216,35 +218,34 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           date: new Date().toISOString()
         }, { merge: true });
         
+        // Limpar ref após processamento bem sucedido
         if (typeof window !== 'undefined') sessionStorage.removeItem('pj_contas_ref');
       }
     }
 
+    // 3. Disparar Webhook (Payload ÚNICO com todos os itens)
     if (webhookSettings.enabled && webhookSettings.url) {
-      const sendWebhooksSequentially = async () => {
-        for (let i = 0; i < finalOrder.items.length; i++) {
-          const item = finalOrder.items[i];
-          const payload = {
-            orderId: finalOrder.id,
-            nome: finalOrder.customerName,
-            telefone: finalOrder.customerPhone,
+      const triggerWebhook = async () => {
+        const payload = {
+          orderId: finalOrder.id,
+          cliente: finalOrder.customerName,
+          whatsapp: finalOrder.customerPhone,
+          total: finalOrder.total,
+          data: finalOrder.date,
+          affiliateId: affiliateId || null,
+          itens: finalOrder.items.map(item => ({
             produto: item.productName,
-            valor: finalOrder.total,
-            emailConta: item.email,
-            senhaConta: item.pass,
+            email: item.email,
+            senha: item.pass,
             perfil: item.screen,
             senhaPerfil: item.screenPass || 'Sem senha',
-            isRevenda: item.isRevenda || false,
-            affiliateId: affiliateId || null
-          };
+            revenda: item.isRevenda || false
+          }))
+        };
 
-          await sendWebhookAction(webhookSettings.url, payload);
-          if (i < finalOrder.items.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
+        await sendWebhookAction(webhookSettings.url, payload);
       };
-      sendWebhooksSequentially();
+      triggerWebhook();
     }
   }, [db, webhookSettings, affiliates]);
 
@@ -287,12 +288,8 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     const aff = affiliates.find(a => a.id === affId);
     if (!aff) return;
 
-    // Trava de segurança: impede novos pedidos se já houver um pendente
     const hasPending = withdrawals.some(w => w.affiliateId === affId && w.status === 'pending');
-    if (hasPending) {
-      console.warn('Affiliate already has a pending withdrawal.');
-      return;
-    }
+    if (hasPending) return;
 
     const wId = `WD-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     const wRef = doc(db, 'withdrawals', wId);
