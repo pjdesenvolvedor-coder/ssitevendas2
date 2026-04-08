@@ -49,6 +49,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   const [pixData, setPixData] = useState<PixResponse | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'paid'>('idle');
   const [copied, setCopied] = useState(false);
+  const [affiliateRef, setAffiliateRef] = useState<string | null>(null);
   
   const saleProcessedRef = useRef(false);
 
@@ -58,6 +59,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   });
 
   const [purchasedCredentials, setPurchasedCredentials] = useState<DeliveredCredential[]>([]);
+
+  // Capturar ref do afiliado para links de retorno
+  useEffect(() => {
+    const storedRef = sessionStorage.getItem('pj_contas_ref');
+    if (storedRef) setAffiliateRef(storedRef);
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -193,13 +200,17 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   });
 
   const isRevendaOrder = purchasedCredentials.some(cred => cred.isRevenda);
+  const getBackUrl = () => {
+    const base = isRevendaOrder ? "/revenda" : "/";
+    return affiliateRef ? `${base}?ref=${affiliateRef}` : base;
+  };
 
   return (
     <div className="min-h-screen pt-32 pb-12 bg-background">
       <Navbar />
       <div className="container mx-auto px-6 max-w-2xl">
         {paymentStatus !== 'paid' && (
-          <Link href={selectedProducts[0]?.isRevenda ? "/revenda" : "/"} className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-8 text-sm font-bold uppercase tracking-widest transition-colors">
+          <Link href={getBackUrl()} className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary mb-8 text-sm font-bold uppercase tracking-widest transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Voltar para a Loja
           </Link>
@@ -504,7 +515,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
                   </p>
                 </div>
 
-                <Link href={isRevendaOrder ? "/revenda" : "/"} className="block mt-8">
+                <Link href={getBackUrl()} className="block mt-8">
                   <Button className="bg-white text-black hover:bg-white/90 font-bold h-14 w-full rounded-xl uppercase tracking-widest">
                     Voltar ao Início
                   </Button>
