@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 export default function AdminDashboard() {
   const { products, orders } = useProducts();
   
-  // Os pedidos já vem ordenados do contexto
+  // Os pedidos já vem ordenados do contexto por data decrescente
   const totalRevenue = orders.reduce((acc, order) => acc + order.total, 0);
   const totalSales = orders.length;
   const activeProductsCount = products.filter(p => p.active).length;
@@ -91,14 +91,15 @@ export default function AdminDashboard() {
           <CardContent className="p-0">
             <div className="divide-y divide-border">
               {orders.length > 0 ? (
-                orders.slice(0, 10).map((order) => (
+                // Mostrando até 15 vendas para maior visibilidade
+                orders.slice(0, 15).map((order) => (
                   <div key={order.id} className="flex items-center justify-between p-5 hover:bg-muted/30 transition-colors">
                     <div className="flex flex-col">
                       <span className="font-bold text-sm">{order.customerName}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] text-muted-foreground uppercase font-mono">{order.id}</span>
                         {order.items.some(item => item.isRevenda) && (
-                          <Badge className="bg-primary/20 text-primary border-none text-[8px] h-4">REVENDA</Badge>
+                          <Badge className="bg-primary/20 text-primary border-none text-[8px] h-4 font-bold uppercase">REVENDA</Badge>
                         )}
                       </div>
                     </div>

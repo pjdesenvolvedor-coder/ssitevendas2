@@ -88,6 +88,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   const products = useMemo(() => productsData || [], [productsData]);
   const orders = useMemo(() => {
     if (!ordersData) return [];
+    // Ordenação explícita por data decrescente para garantir visibilidade instantânea
     return [...ordersData].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [ordersData]);
   
@@ -223,7 +224,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // 3. Disparar Webhook (Payload ÚNICO com todos os itens)
+    // 3. Disparar Webhook IMEDIATAMENTE (Payload ÚNICO com todos os itens)
     if (webhookSettings.enabled && webhookSettings.url) {
       const triggerWebhook = async () => {
         const payload = {
@@ -243,7 +244,8 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           }))
         };
 
-        await sendWebhookAction(webhookSettings.url, payload);
+        // Sem atrasos (delays), envio atômico
+        sendWebhookAction(webhookSettings.url, payload);
       };
       triggerWebhook();
     }
@@ -288,7 +290,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     const aff = affiliates.find(a => a.id === affId);
     if (!aff) return;
 
-    const hasPending = withdrawals.some(w => w.affiliateId === affId && w.status === 'pending');
+    const hasPending = withdrawals.some(w => w.status === 'pending' && w.affiliateId === affId);
     if (hasPending) return;
 
     const wId = `WD-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;

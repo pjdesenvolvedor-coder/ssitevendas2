@@ -110,6 +110,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
+    // Reduzi para 2 segundos para uma experiência ultra rápida
     if (paymentStatus === 'pending' && pixData?.id && !saleProcessedRef.current) {
       interval = setInterval(async () => {
         const result = await checkPixStatusAction(pixData.id);
@@ -117,7 +118,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
           clearInterval(interval);
           processSale();
         }
-      }, 5000);
+      }, 2000);
     }
 
     return () => {
