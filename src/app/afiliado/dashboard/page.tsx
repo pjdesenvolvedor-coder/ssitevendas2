@@ -33,7 +33,8 @@ import {
   Diamond,
   ArrowUpRight,
   Clock,
-  Save
+  Save,
+  AlertTriangle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Affiliate, Commission, WithdrawalRequest } from "@/lib/types";
@@ -92,6 +93,10 @@ export default function AffiliateDashboard() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [withdrawals, user?.id]);
 
+  const hasPendingWithdrawal = useMemo(() => {
+    return myWithdrawals.some(w => w.status === 'pending');
+  }, [myWithdrawals]);
+
   const handleLogout = () => {
     sessionStorage.removeItem("pj_contas_affiliate_user");
     router.push("/afiliado");
@@ -118,6 +123,10 @@ export default function AffiliateDashboard() {
 
   const handleWithdraw = () => {
     if (!user) return;
+    if (hasPendingWithdrawal) {
+      toast({ title: "Ação Negada", description: "Você já possui um saque em análise.", variant: "destructive" });
+      return;
+    }
     if (user.balance < 0.01) {
       toast({ title: "Saldo Insuficiente", description: "O valor mínimo para saque é R$ 0,01.", variant: "destructive" });
       return;
@@ -130,7 +139,6 @@ export default function AffiliateDashboard() {
     toast({ title: "Saque Solicitado", description: "Seu pedido de pagamento está em análise (Até 24h)." });
   };
 
-  // Lógica PJ ELITE
   const careerLevels = [
     { name: "BRONZE", min: 0, rate: 10, icon: Star, color: "text-orange-400" },
     { name: "PRATA", min: 80, rate: 14, icon: Shield, color: "text-slate-300" },
@@ -168,7 +176,6 @@ export default function AffiliateDashboard() {
     <div className="min-h-screen bg-background p-6 pt-24 md:p-12 md:pt-32">
       <div className="max-w-4xl mx-auto space-y-8">
         
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className={cn("w-16 h-16 rounded-3xl bg-card flex items-center justify-center border border-white/5 shadow-2xl transition-colors", currentLevel.color)}>
@@ -189,7 +196,6 @@ export default function AffiliateDashboard() {
           </Button>
         </div>
 
-        {/* Menu */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button 
             onClick={() => setActiveTab('links')}
@@ -281,22 +287,42 @@ export default function AffiliateDashboard() {
                 <h2 className="text-5xl md:text-6xl font-headline font-bold text-white">R$ {user.balance?.toFixed(2) || "0.00"}</h2>
                 <div className="mt-6 flex flex-col gap-4 w-full max-w-xs">
                   <Button 
-                    disabled={user.balance < 0.01}
+                    disabled={user.balance < 0.01 || hasPendingWithdrawal}
                     onClick={handleWithdraw}
                     className="h-14 bg-white text-primary hover:bg-white/90 rounded-2xl font-bold uppercase tracking-widest text-xs gap-2 shadow-xl"
                   >
-                    <ArrowUpRight className="w-4 h-4" />
-                    Solicitar Saque
+                    {hasPendingWithdrawal ? (
+                      <>
+                        <Clock className="w-4 h-4" />
+                        Saque em Análise
+                      </>
+                    ) : (
+                      <>
+                        <ArrowUpRight className="w-4 h-4" />
+                        Solicitar Saque
+                      </>
+                    )}
                   </Button>
-                  <p className="text-[9px] text-white/60 uppercase font-bold tracking-widest">
-                    Mínimo para saque: R$ 0,01
-                  </p>
+                  
+                  {hasPendingWithdrawal && (
+                    <div className="flex items-center justify-center gap-2 text-white/80 animate-pulse">
+                      <AlertTriangle className="w-3 h-3" />
+                      <p className="text-[9px] uppercase font-bold tracking-widest">
+                        Aguarde a conclusão do pedido atual
+                      </p>
+                    </div>
+                  )}
+                  
+                  {!hasPendingWithdrawal && (
+                    <p className="text-[9px] text-white/60 uppercase font-bold tracking-widest">
+                      Mínimo para saque: R$ 0,01
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Dados PIX */}
               <Card className="bg-card/50 border-white/5 rounded-[2rem] overflow-hidden">
                 <CardHeader className="bg-primary/5 border-b border-white/5">
                   <div className="flex items-center gap-3">
@@ -347,7 +373,6 @@ export default function AffiliateDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Histórico de Saques */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3 ml-2">
                   <Clock className="w-5 h-5 text-primary" />
@@ -359,7 +384,7 @@ export default function AffiliateDashboard() {
                       <Card key={w.id} className="bg-card/50 border-white/5 rounded-2xl p-4">
                         <div className="flex items-center justify-between">
                           <div className="space-y-1">
-                            <span className="text-8px] font-bold uppercase tracking-widest text-muted-foreground">{new Date(w.createdAt).toLocaleDateString()}</span>
+                            <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">{new Date(w.createdAt).toLocaleDateString()}</span>
                             <h4 className="text-sm font-bold uppercase">R$ {w.amount.toFixed(2)}</h4>
                           </div>
                           <Badge className={cn(

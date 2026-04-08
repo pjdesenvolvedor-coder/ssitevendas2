@@ -182,7 +182,6 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addOrder = useCallback((order: Order) => {
-    // Busca o afiliado no sessionStorage se não estiver na ordem
     const storedRef = typeof window !== 'undefined' ? sessionStorage.getItem('pj_contas_ref') : null;
     const affiliateId = order.affiliateId || storedRef;
     
@@ -217,7 +216,6 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
           date: new Date().toISOString()
         }, { merge: true });
         
-        // Remove apenas após a conclusão total da venda
         if (typeof window !== 'undefined') sessionStorage.removeItem('pj_contas_ref');
       }
     }
@@ -289,6 +287,13 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
     const aff = affiliates.find(a => a.id === affId);
     if (!aff) return;
 
+    // Trava de segurança: impede novos pedidos se já houver um pendente
+    const hasPending = withdrawals.some(w => w.affiliateId === affId && w.status === 'pending');
+    if (hasPending) {
+      console.warn('Affiliate already has a pending withdrawal.');
+      return;
+    }
+
     const wId = `WD-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     const wRef = doc(db, 'withdrawals', wId);
     
@@ -303,7 +308,7 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
       pixKey: aff.pixKey || 'N/A',
       pixName: aff.pixName || 'N/A'
     }, { merge: true });
-  }, [db, affiliates]);
+  }, [db, affiliates, withdrawals]);
 
   const updateWithdrawalStatus = useCallback((withdrawalId: string, status: 'paid' | 'rejected') => {
     const wReq = withdrawals.find(w => w.id === withdrawalId);
