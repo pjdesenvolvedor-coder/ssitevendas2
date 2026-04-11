@@ -1,15 +1,17 @@
+
 rules_version = '2';
 
 /**
  * PJ CONTAS - Regras de Desenvolvimento
  * 
- * ATENÇÃO: Estas regras estão configuradas como ABERTAS conforme solicitação do usuário.
- * Qualquer pessoa com o ID do projeto pode ler e escrever no banco de dados.
+ * ATENÇÃO: Estas regras estão configuradas como ABERTAS para facilitar o acesso do cliente
+ * via número de WhatsApp de qualquer lugar do mundo.
  */
 
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
+      // Permite leitura e escrita para todos (necessário para a lógica de perfil sem senha por WhatsApp)
       allow read, write: if true;
     }
   }

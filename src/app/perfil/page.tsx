@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/navbar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -24,7 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { Order } from "@/lib/types";
 
 export default function CustomerProfilePage() {
@@ -42,18 +42,23 @@ export default function CustomerProfilePage() {
     }
   }, [router]);
 
-  // Busca as ordens DIRETAMENTE do banco de dados filtrando pelo número do cliente
-  // Isso garante que o histórico seja acessível de qualquer dispositivo ao logar
+  // Busca as ordens do cliente. Removido o 'orderBy' direto do Firestore
+  // para evitar a necessidade de criação de índices compostos manuais.
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !customerPhone) return null;
     return query(
       collection(db, 'orders'), 
-      where('customerPhone', '==', customerPhone),
-      orderBy('date', 'desc')
+      where('customerPhone', '==', customerPhone)
     );
   }, [db, customerPhone]);
 
-  const { data: customerOrders, isLoading } = useCollection<Order>(ordersQuery);
+  const { data: rawOrders, isLoading } = useCollection<Order>(ordersQuery);
+
+  // Ordenação realizada em memória para maior compatibilidade e velocidade
+  const customerOrders = useMemo(() => {
+    if (!rawOrders) return [];
+    return [...rawOrders].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [rawOrders]);
 
   const copyToClipboard = (text: string) => {
     if (!text || text === "Pendente de envio") return;
