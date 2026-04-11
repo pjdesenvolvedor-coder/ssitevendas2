@@ -86,19 +86,19 @@ export function Navbar() {
           {isLogged ? (
             <div className="flex items-center gap-2">
               <Link href="/perfil">
-                <Button className="bg-primary hover:bg-primary/90 text-white font-bold h-10 px-6 rounded-xl text-xs uppercase tracking-widest gap-2">
-                  <User className="w-4 h-4" />
+                <Button className="bg-primary hover:bg-primary/90 text-white font-bold h-8 px-4 rounded-xl text-[10px] uppercase tracking-widest gap-2">
+                  <User className="w-3.5 h-3.5" />
                   MEU PERFIL
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-red-500">
-                <LogOut className="w-5 h-5" />
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-red-500 h-8 w-8">
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           ) : (
             <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90 text-white font-bold h-10 px-8 rounded-xl text-xs uppercase tracking-widest">
+                <Button className="bg-primary hover:bg-primary/90 text-white font-bold h-8 px-6 rounded-xl text-[10px] uppercase tracking-widest">
                   ENTRAR
                 </Button>
               </DialogTrigger>
