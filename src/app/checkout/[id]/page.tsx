@@ -26,7 +26,8 @@ import {
   Lock,
   Monitor,
   Key,
-  AlertTriangle
+  AlertTriangle,
+  MessageCircle
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +66,17 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
     if (storedRef) setAffiliateRef(storedRef);
   }, []);
 
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, "");
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, phone: formatPhone(e.target.value) });
+  };
+
   const processSale = useCallback(() => {
     if (saleProcessedRef.current) return;
     saleProcessedRef.current = true;
@@ -97,20 +109,22 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
     // 3. Persistir e Notificar Webhook via Contexto
     addOrder(newOrder);
     
-    // 4. Atualizar UI
+    // 4. Salvar telefone para o perfil do cliente
+    sessionStorage.setItem("pj_contas_customer_phone", formData.phone);
+    
+    // 5. Atualizar UI
     setPurchasedCredentials(credentials);
     setPaymentStatus('paid');
     
     toast({
       title: "Pagamento Confirmado!",
-      description: "Seu acesso está liberado na tela.",
+      description: "Seu acesso está liberado na tela e salvo no seu perfil.",
     });
   }, [selectedProducts, formData, affiliateRef, sellCredential, addOrder, toast]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
-    // Reduzi para 2 segundos para uma experiência ultra rápida
     if (paymentStatus === 'pending' && pixData?.id && !saleProcessedRef.current) {
       interval = setInterval(async () => {
         const result = await checkPixStatusAction(pixData.id);
@@ -160,10 +174,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.phone) {
+    if (!formData.fullName || formData.phone.length < 14) {
       toast({ 
-        title: "Campos Incompletos", 
-        description: "Por favor, preencha todos os seus dados para continuar.", 
+        title: "Dados Inválidos", 
+        description: "Por favor, preencha seu nome e um WhatsApp válido.", 
         variant: "destructive" 
       });
       return;
@@ -331,15 +345,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
                       WhatsApp / Contato
                     </Label>
                     <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#25D366]" />
                       <Input 
                         id="phone" 
                         type="tel" 
                         placeholder="(00) 00000-0000"
-                        className="bg-background border-white/5 h-14 pl-12 rounded-xl focus:ring-primary"
+                        className="bg-background border-white/5 h-14 pl-12 rounded-xl focus:ring-primary font-bold"
                         required
                         value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        onChange={handlePhoneChange}
+                        maxLength={15}
                       />
                     </div>
                   </div>
