@@ -223,9 +223,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
       isSameType;
   });
 
-  const isRevendaOrder = purchasedCredentials.some(cred => cred.isRevenda);
+  // Lógica de redirecionamento inteligente
   const getBackUrl = () => {
-    const base = isRevendaOrder ? "/revenda" : "/";
+    // Verifica se é revenda baseando-se nos produtos selecionados ou comprados
+    const isRevenda = purchasedCredentials.length > 0 
+      ? purchasedCredentials.some(c => c.isRevenda)
+      : selectedProducts.some(p => p.isRevenda);
+
+    const base = isRevenda ? "/revenda" : "/";
     return affiliateRef ? `${base}?ref=${affiliateRef}` : base;
   };
 
