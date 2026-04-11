@@ -1,0 +1,174 @@
+
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useProducts } from "@/context/products-context";
+import { Navbar } from "@/components/navbar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  ShoppingBag, 
+  MessageSquare, 
+  Copy, 
+  CheckCircle2, 
+  Zap,
+  Mail,
+  Lock,
+  Monitor,
+  Key,
+  ShieldCheck,
+  ArrowRight
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
+
+export default function CustomerProfilePage() {
+  const [customerPhone, setCustomerPhone] = useState<string | null>(null);
+  const { orders, isLoading } = useProducts();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const phone = sessionStorage.getItem("pj_contas_customer_phone");
+    if (!phone) {
+      router.push("/");
+    } else {
+      setCustomerPhone(phone);
+    }
+  }, [router]);
+
+  const customerOrders = orders.filter(order => order.customerPhone === customerPhone);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copiado!", description: "Informação copiada com sucesso." });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Zap className="w-10 h-10 text-primary animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background pb-12">
+      <Navbar />
+      
+      <div className="container mx-auto px-6 pt-32 max-w-3xl">
+        <div className="mb-10 text-center">
+          <Badge className="bg-primary/10 text-primary border-none font-bold mb-4">MINHA CONTA</Badge>
+          <h1 className="text-4xl md:text-5xl font-headline font-bold uppercase">Minhas Compras</h1>
+          <p className="text-muted-foreground text-sm uppercase font-bold tracking-widest mt-2">{customerPhone}</p>
+        </div>
+
+        {customerOrders.length > 0 ? (
+          <div className="space-y-8">
+            {customerOrders.map((order) => (
+              <Card key={order.id} className="bg-card/50 border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                <CardHeader className="bg-primary/5 border-b border-white/5 py-4 px-8 flex flex-row items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Pedido</span>
+                    <span className="font-mono text-xs font-bold text-primary">{order.id}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data</span>
+                    <span className="block text-xs font-bold text-white">{new Date(order.date).toLocaleDateString()}</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-8 space-y-6">
+                  {order.items.map((item, idx) => (
+                    <div key={idx} className="bg-background/50 border border-white/10 rounded-2xl overflow-hidden">
+                      <div className="bg-primary/10 px-6 py-3 border-b border-white/10 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Zap className="w-4 h-4 text-primary" />
+                          <span className="text-xs font-bold text-white uppercase tracking-wider">{item.productName}</span>
+                        </div>
+                        <Link href="https://wa.link/epce4q" target="_blank">
+                          <Button className="h-8 bg-[#25D366] hover:bg-[#1EBE57] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg px-4 gap-2 border-none">
+                            <MessageSquare className="w-3 h-3" />
+                            SUPORTE
+                          </Button>
+                        </Link>
+                      </div>
+                      <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">E-mail</Label>
+                            <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl text-xs font-mono group cursor-pointer" onClick={() => copyToClipboard(item.email)}>
+                              <div className="flex items-center gap-3 truncate">
+                                <Mail className="w-3 h-3 text-primary" />
+                                <span className="truncate">{item.email}</span>
+                              </div>
+                              <Copy className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">Senha</Label>
+                            <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl text-xs font-mono group cursor-pointer" onClick={() => copyToClipboard(item.pass)}>
+                              <div className="flex items-center gap-3 truncate">
+                                <Lock className="w-3 h-3 text-primary" />
+                                <span className="truncate">{item.pass}</span>
+                              </div>
+                              <Copy className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {!item.isRevenda && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            <div className="space-y-1">
+                              <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">Perfil / Tela</Label>
+                              <div className="flex items-center gap-3 bg-black/20 p-3 rounded-xl text-xs font-mono group cursor-pointer" onClick={() => copyToClipboard(item.screen)}>
+                                <Monitor className="w-3 h-3 text-primary" />
+                                <span className="truncate">{item.screen}</span>
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">Senha Perfil</Label>
+                              <div className="flex items-center gap-3 bg-black/20 p-3 rounded-xl text-xs font-mono group cursor-pointer" onClick={() => copyToClipboard(item.screenPass || "Sem Senha")}>
+                                <Key className="w-3 h-3 text-primary" />
+                                <span className="truncate">{item.screenPass || "Sem Senha"}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-card/20 rounded-[3rem] border border-dashed border-white/5">
+            <ShoppingBag className="w-16 h-16 text-muted-foreground mx-auto mb-6 opacity-20" />
+            <h3 className="text-xl font-bold uppercase tracking-widest mb-2">Nenhum pedido encontrado</h3>
+            <p className="text-muted-foreground text-sm max-w-xs mx-auto mb-8">
+              Parece que você ainda não realizou compras com este número.
+            </p>
+            <Link href="/">
+              <Button className="bg-primary hover:bg-primary/90 font-bold uppercase tracking-widest rounded-xl gap-2 h-12 px-8">
+                Ir para a loja
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        <div className="mt-12 p-6 bg-primary/5 border border-primary/20 rounded-3xl flex items-center gap-4">
+          <ShieldCheck className="w-10 h-10 text-primary shrink-0" />
+          <div className="space-y-1">
+            <h4 className="text-xs font-bold uppercase text-white">Segurança PJ CONTAS</h4>
+            <p className="text-[10px] text-muted-foreground uppercase leading-relaxed tracking-wider">
+              Seus dados de acesso são privados e entregues instantaneamente. Nunca compartilhe suas senhas com estranhos.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
