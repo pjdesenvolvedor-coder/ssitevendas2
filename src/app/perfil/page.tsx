@@ -19,7 +19,8 @@ import {
   Key,
   ShieldCheck,
   ArrowRight,
-  Loader2
+  Loader2,
+  Clock
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -29,6 +30,7 @@ import { Order } from "@/lib/types";
 
 export default function CustomerProfilePage() {
   const [customerPhone, setCustomerPhone] = useState<string | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const router = useRouter();
   const { toast } = useToast();
   const db = useFirestore();
@@ -40,10 +42,10 @@ export default function CustomerProfilePage() {
     } else {
       setCustomerPhone(phone);
     }
+    // Atualiza a data atual para cálculos de expiração precisos no lado do cliente
+    setCurrentDate(new Date());
   }, [router]);
 
-  // Busca as ordens do cliente. Removido o 'orderBy' direto do Firestore
-  // para evitar a necessidade de criação de índices compostos manuais.
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !customerPhone) return null;
     return query(
@@ -54,11 +56,21 @@ export default function CustomerProfilePage() {
 
   const { data: rawOrders, isLoading } = useCollection<Order>(ordersQuery);
 
-  // Ordenação realizada em memória para maior compatibilidade e velocidade
   const customerOrders = useMemo(() => {
     if (!rawOrders) return [];
     return [...rawOrders].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [rawOrders]);
+
+  const calculateRemainingDays = (dateStr: string) => {
+    const purchaseDate = new Date(dateStr);
+    const expiryDate = new Date(purchaseDate);
+    expiryDate.setDate(purchaseDate.getDate() + 30);
+    
+    const diffTime = expiryDate.getTime() - currentDate.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  };
 
   const copyToClipboard = (text: string) => {
     if (!text || text === "Pendente de envio") return;
@@ -89,83 +101,99 @@ export default function CustomerProfilePage() {
           </div>
         ) : customerOrders && customerOrders.length > 0 ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {customerOrders.map((order) => (
-              <Card key={order.id} className="bg-card/50 border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-sm">
-                <CardHeader className="bg-primary/5 border-b border-white/5 py-4 px-8 flex flex-row items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Pedido</span>
-                    <span className="font-mono text-xs font-bold text-primary">{order.id}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data da Compra</span>
-                    <span className="block text-xs font-bold text-white">
-                      {new Date(order.date).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-8 space-y-6">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="bg-background/50 border border-white/10 rounded-2xl overflow-hidden group hover:border-primary/30 transition-colors">
-                      <div className="bg-primary/10 px-6 py-3 border-b border-white/10 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Zap className="w-4 h-4 text-primary fill-primary" />
-                          <span className="text-xs font-bold text-white uppercase tracking-wider">{item.productName}</span>
-                        </div>
-                        <Link href="https://wa.link/epce4q" target="_blank">
-                          <Button className="h-8 bg-[#25D366] hover:bg-[#1EBE57] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg px-4 gap-2 border-none shadow-lg shadow-green-500/10">
-                            <MessageSquare className="w-3 h-3" />
-                            SUPORTE
-                          </Button>
-                        </Link>
-                      </div>
-                      <div className="p-6 space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-1">
-                            <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">E-mail de Acesso</Label>
-                            <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl text-xs font-mono group/item cursor-pointer hover:bg-black/40 transition-colors" onClick={() => copyToClipboard(item.email)}>
-                              <div className="flex items-center gap-3 truncate">
-                                <Mail className="w-3 h-3 text-primary" />
-                                <span className="truncate">{item.email}</span>
-                              </div>
-                              <Copy className="w-3 h-3 text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">Senha da Conta</Label>
-                            <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl text-xs font-mono group/item cursor-pointer hover:bg-black/40 transition-colors" onClick={() => copyToClipboard(item.pass)}>
-                              <div className="flex items-center gap-3 truncate">
-                                <Lock className="w-3 h-3 text-primary" />
-                                <span className="truncate">{item.pass}</span>
-                              </div>
-                              <Copy className="w-3 h-3 text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                        </div>
+            {customerOrders.map((order) => {
+              const daysLeft = calculateRemainingDays(order.date);
+              const isExpired = daysLeft <= 0;
 
-                        {!item.isRevenda && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                            <div className="space-y-1">
-                              <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">Perfil Designado</Label>
-                              <div className="flex items-center gap-3 bg-black/20 p-3 rounded-xl text-xs font-mono group/item cursor-pointer hover:bg-black/40 transition-colors" onClick={() => copyToClipboard(item.screen)}>
-                                <Monitor className="w-3 h-3 text-primary" />
-                                <span className="truncate">{item.screen}</span>
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">Senha do Perfil</Label>
-                              <div className="flex items-center gap-3 bg-black/20 p-3 rounded-xl text-xs font-mono group/item cursor-pointer hover:bg-black/40 transition-colors" onClick={() => copyToClipboard(item.screenPass || "Sem Senha")}>
-                                <Key className="w-3 h-3 text-primary" />
-                                <span className="truncate">{item.screenPass || "Sem Senha"}</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
+              return (
+                <Card key={order.id} className="bg-card/50 border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-sm">
+                  <CardHeader className="bg-primary/5 border-b border-white/5 py-4 px-8 flex flex-row items-center justify-between gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Pedido</span>
+                      <span className="font-mono text-xs font-bold text-primary">{order.id}</span>
+                    </div>
+
+                    <div className="bg-primary px-4 py-1.5 rounded-xl flex flex-col items-center justify-center shadow-lg shadow-primary/20 border border-white/10">
+                      <span className="text-[8px] font-bold text-white/70 uppercase tracking-widest">Validade</span>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 text-white" />
+                        <span className="text-xs font-bold text-white leading-none uppercase">
+                          {isExpired ? 'Expirado' : `Faltam ${daysLeft} Dias`}
+                        </span>
                       </div>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
+
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Data da Compra</span>
+                      <span className="block text-xs font-bold text-white">
+                        {new Date(order.date).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-8 space-y-6">
+                    {order.items.map((item, idx) => (
+                      <div key={idx} className="bg-background/50 border border-white/10 rounded-2xl overflow-hidden group hover:border-primary/30 transition-colors">
+                        <div className="bg-primary/10 px-6 py-3 border-b border-white/10 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Zap className="w-4 h-4 text-primary fill-primary" />
+                            <span className="text-xs font-bold text-white uppercase tracking-wider">{item.productName}</span>
+                          </div>
+                          <Link href="https://wa.link/epce4q" target="_blank">
+                            <Button className="h-8 bg-[#25D366] hover:bg-[#1EBE57] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg px-4 gap-2 border-none shadow-lg shadow-green-500/10">
+                              <MessageSquare className="w-3 h-3" />
+                              SUPORTE
+                            </Button>
+                          </Link>
+                        </div>
+                        <div className="p-6 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">E-mail de Acesso</Label>
+                              <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl text-xs font-mono group/item cursor-pointer hover:bg-black/40 transition-colors" onClick={() => copyToClipboard(item.email)}>
+                                <div className="flex items-center gap-3 truncate">
+                                  <Mail className="w-3 h-3 text-primary" />
+                                  <span className="truncate">{item.email}</span>
+                                </div>
+                                <Copy className="w-3 h-3 text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">Senha da Conta</Label>
+                              <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl text-xs font-mono group/item cursor-pointer hover:bg-black/40 transition-colors" onClick={() => copyToClipboard(item.pass)}>
+                                <div className="flex items-center gap-3 truncate">
+                                  <Lock className="w-3 h-3 text-primary" />
+                                  <span className="truncate">{item.pass}</span>
+                                </div>
+                                <Copy className="w-3 h-3 text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-opacity" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {!item.isRevenda && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                              <div className="space-y-1">
+                                <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">Perfil Designado</Label>
+                                <div className="flex items-center gap-3 bg-black/20 p-3 rounded-xl text-xs font-mono group/item cursor-pointer hover:bg-black/40 transition-colors" onClick={() => copyToClipboard(item.screen)}>
+                                  <Monitor className="w-3 h-3 text-primary" />
+                                  <span className="truncate">{item.screen}</span>
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-[8px] uppercase text-muted-foreground font-bold ml-1">Senha do Perfil</Label>
+                                <div className="flex items-center gap-3 bg-black/20 p-3 rounded-xl text-xs font-mono group/item cursor-pointer hover:bg-black/40 transition-colors" onClick={() => copyToClipboard(item.screenPass || "Sem Senha")}>
+                                  <Key className="w-3 h-3 text-primary" />
+                                  <span className="truncate">{item.screenPass || "Sem Senha"}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-20 bg-card/20 rounded-[3rem] border border-dashed border-white/5 animate-in fade-in duration-1000">
