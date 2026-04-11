@@ -36,6 +36,21 @@
         "amount": { "type": "number" },
         "status": { "type": "string", "enum": ["pending", "paid", "rejected"] }
       }
+    },
+    "Order": {
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a customer purchase order.",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed", "cancelled"] },
+        "date": { "type": "string", "format": "date-time" },
+        "total": { "type": "number" },
+        "items": { "type": "array" },
+        "affiliateId": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -53,6 +68,10 @@
     "/withdrawals/{withdrawalId}": {
       "schema": { "$ref": "#/entities/WithdrawalRequest" },
       "description": "Withdrawal requests from affiliates."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer purchase orders."
     }
   }
 }
