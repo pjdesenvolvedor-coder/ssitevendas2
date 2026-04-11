@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
 import { 
@@ -24,6 +24,7 @@ export function Navbar() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loginOpen, setLoginOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   
   const logoImg = PlaceHolderImages.find(img => img.id === 'logo')?.imageUrl || '';
@@ -31,7 +32,12 @@ export function Navbar() {
   useEffect(() => {
     const userPhone = sessionStorage.getItem("pj_contas_customer_phone");
     if (userPhone) setIsLogged(true);
-  }, []);
+
+    // Salva a última página de compras visitada como origem para o botão de voltar do perfil
+    if (pathname === "/" || pathname === "/revenda") {
+      sessionStorage.setItem("pj_contas_shop_origin", pathname);
+    }
+  }, [pathname]);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, "");
