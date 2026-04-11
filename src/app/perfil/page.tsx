@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -113,11 +112,11 @@ export default function CustomerProfilePage() {
                       <span className="font-mono text-xs font-bold text-primary">{order.id}</span>
                     </div>
 
-                    <div className="bg-primary px-4 py-1.5 rounded-xl flex flex-col items-center justify-center shadow-lg shadow-primary/20 border border-white/10">
-                      <span className="text-[8px] font-bold text-white/70 uppercase tracking-widest">Validade</span>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3 h-3 text-white" />
-                        <span className="text-xs font-bold text-white leading-none uppercase">
+                    <div className="bg-primary px-2.5 py-1 rounded-lg flex flex-col items-center justify-center shadow-lg shadow-primary/20 border border-white/10">
+                      <span className="text-[7px] font-bold text-white/70 uppercase tracking-widest">Validade</span>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5 text-white" />
+                        <span className="text-[10px] font-bold text-white leading-none uppercase">
                           {isExpired ? 'Expirado' : `Faltam ${daysLeft} Dias`}
                         </span>
                       </div>
